@@ -8,7 +8,6 @@
 
 typedef struct trie_node_t trie_node_t;
 struct trie_node_t {
-
 	/* in value stochez cuvantul inserat */
 	void *value;
 
@@ -35,24 +34,28 @@ trie_node_t *trie_create_node(trie_t *trie)
 	return nod;
 }
 
-trie_t *trie_create()
+trie_t *trie_create(void)
 {
 	trie_t *trie;
 	trie = malloc(sizeof(trie_t));
-	trie->root = trie_create_node(trie); // vreau sa bag in tree ul meu doar nodul root
+	// vreau sa stochez in tree ul meu doar nodul root
+	trie->root = trie_create_node(trie);
 	trie->root->end_of_word = 0;
 	return trie;
 }
 
-void parcurgere_autocorrect(char *cuvant, int n, trie_t *trie, trie_node_t *nod, int k, int *printari)
+void parcurgere_autocorrect(char *cuvant, int n, trie_t *trie, trie_node_t *nod
+	, int k, int *printari)
 {
 	if (cuvant[0] != k + 'a') // daca este difeit de litera mea
 		n--;
 
+	// inseamna ca difera cuvantul cu mai mult de k literec
 	if (n < 0)
-		return; // inseamna ca difera cu mai mult de k, cuvantul meu si trebuie sa revina la root
+		return;
 
-	if (nod->end_of_word && strlen(cuvant) == 1) {  // daca este final de cuvant de cuvant si are acelasi numar de litere
+	// daca este final de cuvant de cuvant si are acelasi numar de litere
+	if (nod->end_of_word && strlen(cuvant) == 1) {
 		printf("%s\n", (char *)nod->value);
 		(*printari)++;
 	} else if (strlen(cuvant) == 0) {
@@ -61,8 +64,8 @@ void parcurgere_autocorrect(char *cuvant, int n, trie_t *trie, trie_node_t *nod,
 
 	for (int i = 0; i < 26; i++)
 		if (nod->children[i])
-			parcurgere_autocorrect(cuvant + 1, n, trie, nod->children[i], i, printari);
-
+			parcurgere_autocorrect(cuvant + 1, n, trie, nod->children[i], i
+				, printari);
 }
 
 void autocorrect(char *cuvant, int n, trie_t *trie)
@@ -72,7 +75,8 @@ void autocorrect(char *cuvant, int n, trie_t *trie)
 	int printari = 0;
 	while (k < 26) { // maximul vectorului meu de noduri
 		if (parent->children[k])
-			parcurgere_autocorrect(cuvant, n, trie, parent->children[k], k, &printari);
+			parcurgere_autocorrect(cuvant, n, trie, parent->children[k]
+				, k, &printari);
 		k++;
 	}
 	if (!printari)
@@ -84,8 +88,8 @@ trie_node_t *cautare(char *key, trie_node_t *nod)
 	if (!strlen(key)) { // daca s a terminat cuvantul meu
 		return nod;
 	}
-
-	trie_node_t *next_nod = nod->children[key[0] - 'a']; // iau urmatoarea litera
+	// stochez urmatoarea litera
+	trie_node_t *next_nod = nod->children[key[0] - 'a'];
 
 	if (!next_nod)  // nu exista nodul
 		return NULL;
@@ -95,7 +99,8 @@ trie_node_t *cautare(char *key, trie_node_t *nod)
 
 void criteriu1(trie_t *trie, trie_node_t *nod)
 {
-	if (nod->end_of_word) { // daca este final de cuvant inseamna ca pot afisa cuvantul
+	// daca este final de cuvant inseamna ca pot afisa cuvantul
+	if (nod->end_of_word) {
 		printf("%s\n", (char *)nod->value);
 		return;
 	}
@@ -110,7 +115,8 @@ void criteriu1(trie_t *trie, trie_node_t *nod)
 
 void criteriu2(trie_t *trie, trie_node_t *nod, int *min, char **string_final)
 {
-	if (nod->end_of_word && *min > strlen((char *)nod->value)) { // daca este final de cuvant de cuvant si are acelasi numar de litere
+	// daca este final de cuvant de cuvant si are acelasi numar de litere
+	if (nod->end_of_word && *min > strlen((char *)nod->value)) {
 		*string_final = (char *)nod->value;
 		*min = strlen((char *)nod->value);
 		return;
@@ -124,26 +130,26 @@ void criteriu2(trie_t *trie, trie_node_t *nod, int *min, char **string_final)
 
 void criteriu3(trie_t *trie, trie_node_t *nod, int *max, char **string_final)
 {
-	if (nod->end_of_word) { // daca este final de cuvant de cuvant si are acelasi numar de litere
+	// daca este final de cuvant de cuvant si are acelasi numar de litere
+	if (nod->end_of_word) {
 		if (*max < nod->end_of_word) {
 			*max = nod->end_of_word;
 			*string_final = (char *)nod->value;
 		}
 		if (*max == nod->end_of_word)
-			if (strcmp((char *)nod->value, *string_final) < 0) {
+			if (strcmp((char *)nod->value, *string_final) < 0)
 				*string_final = (char *)nod->value;
-			}
 	}
 
-	for (int i = 0; i < 26; i++) {
+	for (int i = 0; i < 26; i++)
 		if (nod->children[i])
 			criteriu3(trie, nod->children[i], max, string_final);
-	}
 }
 
 void autocomplete(trie_t *trie, char *prefix, int nr_criteriu)
 {
-	trie_node_t *parent = cautare(prefix, trie->root); // retin in parent prefixul, mai exact ultimul nod
+	// retin in parent prefixul, mai exact ultimul nod
+	trie_node_t *parent = cautare(prefix, trie->root);
 	if (!parent) { // daca nu exista prefixul
 		printf("No words found\n");
 		if (!nr_criteriu) {
@@ -169,9 +175,11 @@ void autocomplete(trie_t *trie, char *prefix, int nr_criteriu)
 			printf("No words found\n");
 		else
 			printf("%s\n", string_final);
-	} else if (nr_criteriu == 1) { // Cel mai mic lexicografic cuvant cu prefixul dat
+	} else if (nr_criteriu == 1) {
+		// Cel mai mic lexicografic cuvant cu prefixul dat
 		criteriu1(trie, parent);
-	} else if (nr_criteriu == 2) { // Cel mai scurt cuvant cu prefixul dat
+	} else if (nr_criteriu == 2) {
+		// Cel mai scurt cuvant cu prefixul dat
 		char *string_final = NULL;
 		int min = 1000;
 		criteriu2(trie, parent, &min, &string_final);
@@ -179,7 +187,8 @@ void autocomplete(trie_t *trie, char *prefix, int nr_criteriu)
 			printf("No words found\n");
 		else
 			printf("%s\n", string_final);
-	} else if (nr_criteriu == 3) { // Cel mai frecvent folosit cuvant cu prefixul dat
+	} else if (nr_criteriu == 3) {
+		// Cel mai frecvent folosit cuvant cu prefixul dat
 		char *string_final = NULL;
 		int max = 0;
 		criteriu3(trie, parent, &max, &string_final);
@@ -193,18 +202,21 @@ void autocomplete(trie_t *trie, char *prefix, int nr_criteriu)
 void trie_insert(trie_t *trie, trie_node_t *nod, char *key, char *value)
 {
 	if (strlen(key) == 0) { // daca s a terminat cuvantul meu
-		nod->end_of_word++; // inseamna ca sunt mai multe aparitii ale cuvantului
+		// inseamna ca sunt mai multe aparitii ale cuvantului
+		nod->end_of_word++;
 		int l = strlen(value);
 		nod->value = realloc(nod->value, l + 1);
 		memcpy(nod->value, value, l + 1);
 		return;
 	}
 
-	trie_node_t *next_nod = nod->children[key[0] - 'a']; // iau urmatoarea litera
+	// stochez urmatoarea litera
+	trie_node_t *next_nod = nod->children[key[0] - 'a'];
 
 	if (!next_nod) { // nu exista nodul
 		next_nod = trie_create_node(trie); // creez nodul
-		nod->children[key[0] - 'a'] = next_nod; // bag in nodul precedent litera coresp. in vectorul
+		// retin in nodul precedent litera coresp
+		nod->children[key[0] - 'a'] = next_nod;
 		nod->n_children++;
 	}
 	trie_insert(trie, next_nod, key + 1, value);
@@ -225,7 +237,7 @@ int trie_remove(trie_t *trie, trie_node_t *nod, char *key)
 	if (!next_nod)
 		return 0;
 
-	if (next_nod && trie_remove(trie, next_nod, key + 1)) { // daca exista nodul urmator si
+	if (next_nod && trie_remove(trie, next_nod, key + 1)) {
 		free(next_nod->value);
 		free(next_nod->children);
 		free(next_nod);
@@ -247,20 +259,20 @@ void parcurgere_free(trie_t **trie, trie_node_t *nod)
 	free(nod);
 }
 
-void trie_free(trie_t **pTrie)
+void trie_free(trie_t **ptrie)
 {
-	trie_node_t *parent = (*pTrie)->root;
+	trie_node_t *parent = (*ptrie)->root;
 	int k = 0; // pentru a parcurge vectorul meu noduri
 
 	for (int i = 0; i < 26; i++) { // maximul vectorului meu de noduri
 		if (parent->children[i])
-			parcurgere_free(pTrie, parent->children[i]);
+			parcurgere_free(ptrie, parent->children[i]);
 	}
-	free((*pTrie)->root->value);
-	free((*pTrie)->root->children);
-	free((*pTrie)->root);
-	free(*pTrie);
-	*pTrie = NULL;
+	free((*ptrie)->root->value);
+	free((*ptrie)->root->children);
+	free((*ptrie)->root);
+	free(*ptrie);
+	*ptrie = NULL;
 }
 
 void load(char *filename, trie_t *trie)
@@ -278,7 +290,7 @@ int main(void)
 	char sir[100];
 	trie_t *trie = trie_create();
 
-	while (fgets(sir, 100, stdin)) { // citesc cat timp sunt randuri de citit
+	while (fgets(sir, 100, stdin)) {
 		char *token = strtok(sir, " ");
 		if (!strcmp(token, "LOAD")) {
 			token = strtok(NULL, " "); // stochez in token numele fisierului
@@ -300,14 +312,14 @@ int main(void)
 		}
 		if (!strncmp(token, "AUTOCOMPLETE", 12)) {
 			token = strtok(NULL, " "); // retin cuvantul
-			char *token2 = strtok(NULL, " \n");
+			char *token2 = strtok(NULL, "\n");
 			int nr_criteriu = atoi(token2);
 			autocomplete(trie, token, nr_criteriu);
 			continue;
 		}
 		if (!strncmp(token, "AUTOCORRECT", 11)) {
 			token = strtok(NULL, " "); // retin cuvantul
-			char *token2 = strtok(NULL, " \n");
+			char *token2 = strtok(NULL, "\n");
 			int nr_criteriu = atoi(token2);
 			autocorrect(token, nr_criteriu, trie);
 			continue;
